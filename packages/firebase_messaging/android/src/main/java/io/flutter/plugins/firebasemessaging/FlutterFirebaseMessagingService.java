@@ -6,6 +6,7 @@ package io.flutter.plugins.firebasemessaging;
 
 import android.app.ActivityManager;
 import android.app.KeyguardManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -62,6 +63,7 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
   private static final String TAG = "FlutterFcmService";
 
   private static Context backgroundContext;
+
 
   @Override
   public void onCreate() {
@@ -273,12 +275,28 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
     }
     args.put("handle", backgroundMessageHandle);
 
-    if (remoteMessage.getData() != null) {
-      messageData.put("data", remoteMessage.getData());
+    Map <String, String> msgData = remoteMessage.getData();
+    if (msgData != null) {
+      if (msgData.containsKey("type") && msgData.get("type").equals("clear")) {
+        Log.w(TAG, "Got CLEAR message. Just remove all push notification");
+        Log.d("flutter", "ANDROID: cleanNotifications");
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancelAll();
+        return;
+      }
+      messageData.put("data", msgData);
     }
     if (remoteMessage.getNotification() != null) {
       messageData.put("notification", remoteMessage.getNotification());
     }
+    Log.i(TAG, "ANDROID: Parse remote message");
+
+    for (Map.Entry<String, Object> entry :
+            messageData.entrySet()) {
+      Log.i(TAG,  entry.getKey() + " : " + entry.getValue());
+
+    }
+
 
     args.put("message", messageData);
 
