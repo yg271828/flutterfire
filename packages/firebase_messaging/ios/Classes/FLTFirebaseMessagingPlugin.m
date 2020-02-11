@@ -25,7 +25,7 @@ static NSObject<FlutterPluginRegistrar> *_registrar;
 
 @implementation FLTFirebaseMessagingPlugin {
   FlutterMethodChannel *_channel;
-  NSDictionary *_launchNotification;
+NSDictionary *_launchNotification;
   BOOL _resumingFromBackground;
 }
 
@@ -140,6 +140,7 @@ static NSObject<FlutterPluginRegistrar> *_registrar;
     [FIRMessaging messaging].shouldEstablishDirectChannel = true;
     [[UIApplication sharedApplication] registerForRemoteNotifications];
     if (_launchNotification != nil) {
+        NSLog(@"YG Invoke onLaunch");
       [_channel invokeMethod:@"onLaunch" arguments:_launchNotification];
     }
     result(nil);
@@ -191,11 +192,13 @@ static NSObject<FlutterPluginRegistrar> *_registrar;
 #if defined(__IPHONE_10_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
 // Receive data message on iOS 10 devices while app is in the foreground.
 - (void)applicationReceivedRemoteMessage:(FIRMessagingRemoteMessage *)remoteMessage {
+    NSLog(@"YG  Remote notification call 1");
   [self didReceiveRemoteNotification:remoteMessage.appData];
 }
 #endif
 
 - (void)didReceiveRemoteNotification:(NSDictionary *)userInfo {
+    NSLog(@"YG Remote notification");
   if (_resumingFromBackground) {
     [_channel invokeMethod:@"onResume" arguments:userInfo];
   } else {
@@ -207,8 +210,25 @@ static NSObject<FlutterPluginRegistrar> *_registrar;
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    NSLog(@"YG didFinishLaunchingWithOptions");
   if (launchOptions != nil) {
-    _launchNotification = launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey];
+      NSDictionary* tmp = launchOptions[UIApplicationLaunchOptionsRemoteNotificationKey];
+      NSDictionary* aps = [tmp objectForKey:@"aps"];
+      if (aps) {
+          NSString* type = [aps objectForKey:@"type"];
+          if ([type isEqualToString:@"clear"]) {
+              NSLog(@"YG Got CLEAR message");
+              //application.applicationIconBadgeNumber = 1;
+              //application.applicationIconBadgeNumber = 0;
+              //[application cancelAllLocalNotifications];
+              [[UIApplication sharedApplication] setApplicationIconBadgeNumber: 1];
+              [[UIApplication sharedApplication] setApplicationIconBadgeNumber: 0];
+             // [[UIApplication sharedApplication] cancelAllLocalNotifications];
+              return NO;
+          }
+      }
+
+    _launchNotification = tmp;
   }
   return YES;
 }
@@ -239,6 +259,22 @@ static NSObject<FlutterPluginRegistrar> *_registrar;
 - (BOOL)application:(UIApplication *)application
     didReceiveRemoteNotification:(NSDictionary *)userInfo
           fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler {
+    NSLog(@"YG Remote notification call2");
+    NSDictionary* aps = [userInfo objectForKey:@"aps"];
+    if (aps) {
+        NSString* type = [aps objectForKey:@"type"];
+        if ([type isEqualToString:@"clear"]) {
+            NSLog(@"YG Got CLEAR message");
+            //application.applicationIconBadgeNumber = 1;
+            //application.applicationIconBadgeNumber = 0;
+            //[application cancelAllLocalNotifications];
+            [[UIApplication sharedApplication] setApplicationIconBadgeNumber: 1];
+            [[UIApplication sharedApplication] setApplicationIconBadgeNumber: 0];
+            [[UIApplication sharedApplication] cancelAllLocalNotifications];
+            completionHandler(UIBackgroundFetchResultNoData);
+            return YES;
+        }
+    }
   [self didReceiveRemoteNotification:userInfo];
   completionHandler(UIBackgroundFetchResultNoData);
   return YES;
@@ -275,6 +311,7 @@ static NSObject<FlutterPluginRegistrar> *_registrar;
 
 - (void)messaging:(FIRMessaging *)messaging
     didReceiveMessage:(FIRMessagingRemoteMessage *)remoteMessage {
+    NSLog(@"YG Invoke onMessage");
   [_channel invokeMethod:@"onMessage" arguments:remoteMessage.appData];
 }
 

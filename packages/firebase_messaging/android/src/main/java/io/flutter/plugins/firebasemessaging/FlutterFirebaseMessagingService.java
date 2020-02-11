@@ -6,6 +6,7 @@ package io.flutter.plugins.firebasemessaging;
 
 import android.app.ActivityManager;
 import android.app.KeyguardManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -62,6 +63,7 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
   private static final String TAG = "FlutterFcmService";
 
   private static Context backgroundContext;
+
 
   @Override
   public void onCreate() {
@@ -260,6 +262,8 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
           "setBackgroundChannel was not called before messages came in, exiting.");
     }
 
+    Log.d(TAG, "Got notification message");
+
     // If another thread is waiting, then wake that thread when the callback returns a result.
     MethodChannel.Result result = null;
     if (latch != null) {
@@ -273,8 +277,15 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
     }
     args.put("handle", backgroundMessageHandle);
 
-    if (remoteMessage.getData() != null) {
-      messageData.put("data", remoteMessage.getData());
+    Map <String, String> msgData = remoteMessage.getData();
+    if (msgData != null) {
+      if (msgData.containsKey("type") && msgData.get("type").equals("clear")) {
+        Log.d(TAG, "Got CLEAR message. Just remove all push notification");
+        Log.d("flutter", "ANDROID: cleanNotifications");
+        NotificationManager notificationManager = (NotificationManager) backgroundContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancelAll();
+      }
+      messageData.put("data", msgData);
     }
     if (remoteMessage.getNotification() != null) {
       messageData.put("notification", remoteMessage.getNotification());

@@ -129,7 +129,7 @@ public class FirebaseMessagingPlugin extends BroadcastReceiver
   }
 
   @NonNull
-  private Map<String, Object> parseRemoteMessage(RemoteMessage message) {
+  private Map<String, Object> parseRemoteMessage(RemoteMessage message)  {
     Map<String, Object> content = new HashMap<>();
     content.put("data", message.getData());
 
