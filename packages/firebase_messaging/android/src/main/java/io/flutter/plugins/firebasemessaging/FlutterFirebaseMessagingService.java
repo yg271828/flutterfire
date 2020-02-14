@@ -290,6 +290,14 @@ public class FlutterFirebaseMessagingService extends FirebaseMessagingService {
     if (remoteMessage.getNotification() != null) {
       messageData.put("notification", remoteMessage.getNotification());
     }
+    Log.i(TAG, "ANDROID: Parse remote message");
+
+    for (Map.Entry<String, Object> entry :
+            messageData.entrySet()) {
+      Log.i(TAG,  entry.getKey() + " : " + entry.getValue());
+
+    }
+
 
     args.put("message", messageData);
 
